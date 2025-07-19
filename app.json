@@ -48,6 +48,9 @@
       "dynamicConfigPath": null,
       "staticConfigPath": "C:\\Users\\silva\\projetos\\React-Native-Bluetooth-Chat\\app.json",
       "packageJsonPath": "C:\\Users\\silva\\projetos\\React-Native-Bluetooth-Chat\\package.json"
-    }
+    },
+    "plugins": [
+      "react-native-ble-plx"
+    ]
   }
 }
