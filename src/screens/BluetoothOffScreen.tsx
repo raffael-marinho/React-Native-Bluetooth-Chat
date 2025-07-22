@@ -14,7 +14,7 @@ export default function BluetoothOffScreen() {
   const { username } = route.params;
 
   const handleEnableBluetooth = () => {
-    const connectedUser = "OutroUsuário"; // Aqui você pode simular ou futuramente buscar via Bluetooth
+    const connectedUser = "OutroUsuário"; // futuramente: buscar dispositivo real
     navigation.navigate('BluetoothOn', {
       username,
       connectedUser,
@@ -32,8 +32,9 @@ export default function BluetoothOffScreen() {
       <Text style={styles.username}>{username}</Text>
 
       <Text style={styles.label}>Conectado:</Text>
-      <TouchableOpacity onPress={handleEnableBluetooth}>
-        <Text style={styles.enableText}>Ativar Bluetooth para Busca</Text>
+
+      <TouchableOpacity style={styles.button} onPress={handleEnableBluetooth}>
+        <Text style={styles.buttonText}>Ativar Bluetooth para Busca</Text>
       </TouchableOpacity>
     </View>
   );
@@ -73,9 +74,16 @@ const styles = StyleSheet.create({
     marginTop: 40,
     fontSize: 14,
   },
-  enableText: {
+  button: {
+    backgroundColor: '#0a1e2b',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 24,
     marginTop: 16,
-    color: '#aaa',
+  },
+  buttonText: {
+    color: '#fff',
     fontSize: 14,
+    textAlign: 'center',
   },
 });

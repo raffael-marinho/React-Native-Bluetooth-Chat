@@ -11,19 +11,16 @@ export default function BluetoothOnScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Top bar */}
       <View style={styles.topBar}>
         <Text style={styles.topText}>bluetooth</Text>
         <Image source={require('../../assets/on.png')} style={styles.bluetoothIcon} />
       </View>
 
-      {/* Perfil e nome do usuário logado */}
       <Image source={require('../../assets/Masculino.png')} style={styles.profile} />
       <Text style={styles.username}>{username}</Text>
 
       <Text style={styles.label}>Conectado:</Text>
 
-      {/* Cartão do usuário conectado */}
       <View style={styles.connectedCard}>
         <Image source={require('../../assets/Masculino.png')} style={styles.avatar} />
         <Text style={styles.connectedName}>{connectedUser}</Text>

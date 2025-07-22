@@ -1,5 +1,13 @@
+// src/screens/LoginScreen.tsx
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+} from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RootStackParamList } from '../navigation/StackNavigator';
@@ -10,19 +18,25 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (username.trim()) {
-      navigation.navigate('Chat');
+      navigation.navigate('BluetoothOff', { username });
     }
   };
 
   return (
     <View style={styles.container}>
-      <Image source={require('../../assets/Logo 2.png')} style={styles.logoImage} resizeMode="contain" />
+      <Image
+        source={require('../../assets/Logo 2.png')}
+        style={styles.logoImage}
+        resizeMode="contain"
+      />
 
       <Text style={styles.label}>Usuário:</Text>
       <TextInput
         value={username}
         onChangeText={setUsername}
         style={styles.input}
+        placeholder="Digite seu nome"
+        placeholderTextColor="#666"
       />
 
       <TouchableOpacity style={styles.button} onPress={handleLogin}>
