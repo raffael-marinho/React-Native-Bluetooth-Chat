@@ -9,6 +9,8 @@ export type RootStackParamList = {
   Splash: undefined;
   Login: undefined;
   Chat: undefined;
+  BluetoothOff: { username: string };
+  BluetoothOn: { username: string; connectedUser: string };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
