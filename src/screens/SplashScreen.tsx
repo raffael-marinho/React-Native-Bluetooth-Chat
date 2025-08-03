@@ -9,7 +9,7 @@ export default function SplashScreen() {
 
   useEffect(() => {
     const timer = setTimeout(() => {
-      navigation.replace('Login'); // Após 2s, vai pra tela de login
+      navigation.replace('BluetoothConnection'); // Vai direto para BluetoothConnectionScreen
     }, 5000);
 
     return () => clearTimeout(timer);
@@ -18,7 +18,7 @@ export default function SplashScreen() {
   return (
     <View style={styles.container}>
       <Image
-        source={require('../../assets/blink-logo.png')} // logo que você colocou na pasta assets
+        source={require('../../assets/blink-logo.png')}
         style={styles.logo}
         resizeMode="contain"
       />

@@ -34,23 +34,13 @@
         "android.permission.ACCESS_COARSE_LOCATION",
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN"
-      ],
-      "usesPermissionFlags": {
-        "android.permission.BLUETOOTH_SCAN": "neverForLocation"
-      }
-    },
-    "web": {
-      "favicon": "./assets/favicon.png"
-    },
-    "_internal": {
-      "isDebug": false,
-      "projectRoot": "C:\\Users\\silva\\projetos\\React-Native-Bluetooth-Chat",
-      "dynamicConfigPath": null,
-      "staticConfigPath": "C:\\Users\\silva\\projetos\\React-Native-Bluetooth-Chat\\app.json",
-      "packageJsonPath": "C:\\Users\\silva\\projetos\\React-Native-Bluetooth-Chat\\package.json"
+      ]
     },
     "plugins": [
-      "react-native-ble-plx"
-    ]
+      "expo-sqlite"
+    ],
+    "web": {
+      "favicon": "./assets/favicon.png"
+    }
   }
 }

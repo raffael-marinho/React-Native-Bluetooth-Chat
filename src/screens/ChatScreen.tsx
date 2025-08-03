@@ -1,111 +1,140 @@
 // src/screens/ChatScreen.tsx
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, ScrollView, TextInput, Button } from 'react-native';
-import React, { useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 
 export default function ChatScreen() {
-  const [messages, setMessages] = useState<string[]>([]);
-  const [inputText, setInputText] = useState<string>('');
+  const [messages, setMessages] = useState<any[]>([]);
+  const [input, setInput] = useState('');
+  const flatListRef = useRef<FlatList>(null);
 
-  const addMessage = (msg: string) => {
-    setMessages(prevMessages => [...prevMessages, msg]);
+  const handleSend = () => {
+    if (!input.trim()) return;
+    const newMsg = {
+      id: Date.now(), // temporário
+      sender: 'me',
+      content: input,
+      timestamp: new Date().toISOString(),
+    };
+    setMessages(prev => [...prev, newMsg]);
+    setInput('');
+    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
   };
 
-  const handleSendMessage = () => {
-    if (inputText.trim()) {
-      addMessage(`Você: ${inputText}`);
-      setInputText('');
-    }
-  };
+  const renderItem = ({ item }: { item: any }) => (
+    <View style={item.sender === 'me' ? styles.myMessage : styles.otherMessage}>
+      <Text style={styles.messageText}>{item.content}</Text>
+    </View>
+  );
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Chat Bluetooth</Text>
-
-      <ScrollView style={styles.messagesContainer} contentContainerStyle={styles.messagesContent}>
-        {messages.length === 0 ? (
-          <Text style={styles.noMessagesText}>Nenhuma mensagem ainda. Conecte-se via Bluetooth!</Text>
-        ) : (
-          messages.map((msg, index) => (
-            <Text key={index} style={styles.messageText}>{msg}</Text>
-          ))
-        )}
-      </ScrollView>
-
-      <View style={styles.inputContainer}>
-        <TextInput
-          style={styles.textInput}
-          placeholder="Digite sua mensagem..."
-          value={inputText}
-          onChangeText={setInputText}
-          onSubmitEditing={handleSendMessage}
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      keyboardVerticalOffset={90}
+    >
+      <View style={styles.container}>
+        <Text style={styles.dateLabel}>Hoje</Text>
+        <FlatList
+          ref={flatListRef}
+          data={messages}
+          keyExtractor={item => item.id.toString()}
+          renderItem={renderItem}
+          contentContainerStyle={styles.messageList}
         />
-        <Button title="Enviar" onPress={handleSendMessage} />
-      </View>
 
-      <StatusBar style="auto" />
-    </View>
+        <View style={styles.inputContainer}>
+          <TextInput
+            value={input}
+            onChangeText={setInput}
+            style={styles.input}
+            placeholder="Mensagem"
+            placeholderTextColor="#555"
+          />
+          <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
+            <Text style={styles.sendButtonText}>▶</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
-    paddingTop: 50,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 20,
-    color: '#333',
-  },
-  messagesContainer: {
-    flex: 1,
     backgroundColor: '#fff',
-    marginHorizontal: 10,
-    borderRadius: 8,
+  },
+  dateLabel: {
+    alignSelf: 'center',
+    backgroundColor: '#ddd',
+    paddingVertical: 4,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginTop: 10,
+    color: '#333',
+    fontWeight: '600',
+  },
+  messageList: {
     padding: 10,
-    marginBottom: 10,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    paddingBottom: 20,
   },
-  messagesContent: {
-    justifyContent: 'flex-end',
+  myMessage: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#ADD8E6',
+    padding: 10,
+    borderRadius: 14,
+    marginVertical: 4,
+    maxWidth: '75%',
   },
-  noMessagesText: {
-    textAlign: 'center',
-    color: '#888',
-    fontStyle: 'italic',
-    marginTop: 'auto',
-    marginBottom: 'auto',
+  otherMessage: {
+    alignSelf: 'flex-end',
+    backgroundColor: '#ddd',
+    padding: 10,
+    borderRadius: 14,
+    marginVertical: 4,
+    maxWidth: '75%',
   },
   messageText: {
     fontSize: 16,
-    marginBottom: 5,
-    color: '#555',
+    color: '#000',
   },
   inputContainer: {
     flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 10,
-    paddingBottom: 20,
-    backgroundColor: '#fff',
+    padding: 10,
     borderTopWidth: 1,
-    borderColor: '#eee',
+    borderColor: '#ccc',
+    backgroundColor: '#eee',
+    alignItems: 'center',
   },
-  textInput: {
+  input: {
     flex: 1,
-    borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 25,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
-    backgroundColor: '#f9f9f9',
+    borderRadius: 20,
+    backgroundColor: '#ccc',
+    paddingHorizontal: 16,
+    height: 40,
+    fontSize: 16,
+    color: '#000',
+  },
+  sendButton: {
+    marginLeft: 10,
+    backgroundColor: '#1E88E5',
+    borderRadius: 20,
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  sendButtonText: {
+    color: '#fff',
+    fontSize: 18,
   },
 });
