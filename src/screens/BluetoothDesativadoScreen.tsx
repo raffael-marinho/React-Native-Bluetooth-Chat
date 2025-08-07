@@ -1,9 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Icon from 'react-native-vector-icons/MaterialIcons';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { RootStackParamList } from '../navigation/StackNavigator'; // Ajuste o caminho conforme sua estrutura
+import type { RootStackParamList } from '../navigation/StackNavigator';
 
 type BluetoothDesativadoScreenProp = NativeStackNavigationProp<
   RootStackParamList,
@@ -13,9 +13,9 @@ type BluetoothDesativadoScreenProp = NativeStackNavigationProp<
 const BluetoothDesativadoScreen = () => {
   const navigation = useNavigation<BluetoothDesativadoScreenProp>();
 
-  const ativarBluetooth = () => {
-    // Aqui você pode integrar a ativação real do Bluetooth
-    console.log('Bluetooth ativar...');
+  // Ação para o botão. Não tenta ligar o Bluetooth, apenas navega.
+  const irParaConexao = () => {
+    // A tela de conexão vai checar o status do Bluetooth.
     navigation.navigate('BluetoothConnection');
   };
 
@@ -24,13 +24,12 @@ const BluetoothDesativadoScreen = () => {
       <Icon name="bluetooth-disabled" size={120} color="#888" />
       <Text style={styles.title}>Bluetooth Desativado</Text>
       <Text style={styles.subtitle}>
-        Ative o Bluetooth para procurar e se conectar a outros dispositivos.
+        Para continuar, por favor, ative o Bluetooth nas configurações do seu celular.
       </Text>
 
-      <TouchableOpacity style={styles.button} onPress={ativarBluetooth}>
-        <Text style={styles.buttonText}>Ativar Bluetooth</Text>
+      <TouchableOpacity style={styles.button} onPress={irParaConexao}>
+        <Text style={styles.buttonText}>Entendi, ir para Conexão</Text>
       </TouchableOpacity>
-
     </View>
   );
 };
@@ -68,5 +67,4 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 16,
   },
-  
 });
