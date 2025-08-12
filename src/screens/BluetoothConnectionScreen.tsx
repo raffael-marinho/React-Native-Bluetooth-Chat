@@ -1,77 +1,81 @@
 import React, { useEffect, useState } from 'react';
-import { FlatList, TouchableOpacity, Text, StyleSheet, Platform, PermissionsAndroid } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import RNBluetoothClassic from 'react-native-bluetooth-classic';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/StackNavigator';
-import { BleManager, Device } from 'react-native-ble-plx';
+import type { RootStackParamList } from '../navigation/StackNavigator';
 
 type BluetoothConnectionScreenNavigationProp = NativeStackNavigationProp<
   RootStackParamList,
   'BluetoothConnection'
 >;
 
-const manager = new BleManager();
-
 export default function BluetoothConnectionScreen() {
   const navigation = useNavigation<BluetoothConnectionScreenNavigationProp>();
-  const [devices, setDevices] = useState<Device[]>([]);
+  const [devices, setDevices] = useState<Array<{ id: string; name: string }>>([]);
+  const [discovering, setDiscovering] = useState(false);
 
   useEffect(() => {
-    async function requestPermissions() {
-      if (Platform.OS === 'android') {
-        await PermissionsAndroid.requestMultiple([
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
-          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
-          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
-        ]);
+    async function fetchDevices() {
+      try {
+        // Lista dispositivos pareados (bonded)
+        const bondedDevices = await RNBluetoothClassic.getBondedDevices();
+        setDevices(bondedDevices);
+      } catch (error) {
+        console.error('Erro ao listar dispositivos pareados:', error);
       }
     }
 
-    requestPermissions().then(() => {
-      const devicesFound = new Map<string, Device>();
-
-      manager.startDeviceScan(null, null, (error, device) => {
-        if (error) {
-          console.log('Erro no scan:', error);
-          return;
-        }
-        if (device && device.name && !devicesFound.has(device.id)) {
-          devicesFound.set(device.id, device);
-          setDevices(Array.from(devicesFound.values()));
-        }
-      });
-
-      // Para o scan após 10 segundos para não ficar sempre ligado
-      const timer = setTimeout(() => {
-        manager.stopDeviceScan();
-      }, 10000);
-
-      // Cleanup ao desmontar a tela
-      return () => {
-        clearTimeout(timer);
-        manager.stopDeviceScan();
-      };
-    });
+    fetchDevices();
   }, []);
 
+  const handleDiscover = async () => {
+    setDiscovering(true);
+    try {
+      const foundDevices = await RNBluetoothClassic.startDiscovery();
+      setDevices(foundDevices);
+    } catch (error) {
+      console.error('Erro na descoberta:', error);
+    } finally {
+      setDiscovering(false);
+    }
+  };
+
   return (
-    <FlatList
-      data={devices}
-      keyExtractor={(item) => item.id}
-      renderItem={({ item }) => (
-        <TouchableOpacity
-          style={styles.deviceButton}
-          onPress={() => navigation.navigate('BluetoothConectado', { deviceId: item.id })}
-        >
-          <Text style={styles.deviceText}>{item.name}</Text>
-        </TouchableOpacity>
-      )}
-      ListEmptyComponent={<Text style={styles.emptyText}>Procurando dispositivos...</Text>}
-    />
+    <View style={{ flex: 1, padding: 16 }}>
+      <TouchableOpacity style={styles.button} onPress={handleDiscover} disabled={discovering}>
+        <Text style={styles.buttonText}>{discovering ? 'Procurando...' : 'Procurar Dispositivos'}</Text>
+      </TouchableOpacity>
+
+      <FlatList
+        data={devices}
+        keyExtractor={(item) => item.id}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.deviceButton}
+            onPress={() => navigation.navigate('BluetoothConectado', { deviceId: item.id })}
+          >
+            <Text style={styles.deviceText}>{item.name || item.id}</Text>
+          </TouchableOpacity>
+        )}
+        ListEmptyComponent={<Text style={{ textAlign: 'center', marginTop: 20 }}>Nenhum dispositivo encontrado.</Text>}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
+  button: {
+    backgroundColor: '#007AFF',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    textAlign: 'center',
+  },
   deviceButton: {
     padding: 15,
     backgroundColor: '#007AFF',
@@ -81,10 +85,5 @@ const styles = StyleSheet.create({
   deviceText: {
     color: '#fff',
     fontSize: 16,
-  },
-  emptyText: {
-    textAlign: 'center',
-    marginTop: 20,
-    color: '#888',
   },
 });

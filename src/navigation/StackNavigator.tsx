@@ -1,24 +1,23 @@
 import React, { useEffect, useState } from 'react';
+import { PermissionsAndroid, Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import RNBluetoothClassic from 'react-native-bluetooth-classic';
+
 import BluetoothDesativadoScreen from '../screens/BluetoothDesativadoScreen';
 import BluetoothConnectionScreen from '../screens/BluetoothConnectionScreen';
 import BluetoothConectadoScreen from '../screens/BluetoothConectadoScreen';
 import ChatScreen from '../screens/ChatScreen';
 import SplashScreen from '../screens/SplashScreen';
-import { BleManager } from 'react-native-ble-plx';
-import { PermissionsAndroid, Platform } from 'react-native';
 
 export type RootStackParamList = {
-  Splash: undefined; // <-- adiciona aqui
+  Splash: undefined;
   BluetoothDesativado: undefined;
   BluetoothConnection: undefined;
   BluetoothConectado: { deviceId: string };
   Chat: undefined;
 };
 
-
 const Stack = createNativeStackNavigator<RootStackParamList>();
-const manager = new BleManager();
 
 export default function StackNavigator() {
   const [bluetoothStatus, setBluetoothStatus] = useState<'checking' | 'off' | 'ready'>('checking');
@@ -32,14 +31,15 @@ export default function StackNavigator() {
           PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         ]);
       }
-
-      const state = await manager.state();
-      if (state !== 'PoweredOn') {
+      try {
+        const enabled = await RNBluetoothClassic.isBluetoothEnabled();
+        setBluetoothStatus(enabled ? 'ready' : 'off');
+      } catch (error) {
+        console.error('Erro ao checar Bluetooth:', error);
         setBluetoothStatus('off');
-      } else {
-        setBluetoothStatus('ready');
       }
     }
+
     checkBluetooth();
   }, []);
 

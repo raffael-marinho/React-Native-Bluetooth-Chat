@@ -3,44 +3,49 @@ import { View, Text, Button, ActivityIndicator } from 'react-native';
 import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../navigation/StackNavigator';
-import { BleManager, Device } from 'react-native-ble-plx';
+
+import RNBluetoothClassic, { BluetoothDevice } from 'react-native-bluetooth-classic';
 
 type BluetoothConectadoScreenRouteProp = RouteProp<RootStackParamList, 'BluetoothConectado'>;
 type BluetoothConectadoScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BluetoothConectado'>;
 
-const manager = new BleManager();
-
 export default function BluetoothConectadoScreen() {
   const route = useRoute<BluetoothConectadoScreenRouteProp>();
   const navigation = useNavigation<BluetoothConectadoScreenNavigationProp>();
-  const [device, setDevice] = useState<Device | null>(null);
+  const [device, setDevice] = useState<BluetoothDevice | null>(null);
   const [connecting, setConnecting] = useState(true);
   const { deviceId } = route.params;
 
   useEffect(() => {
-    let connectedDevice: Device | null = null;
-
-    const connectDevice = async () => {
+    async function connectDevice() {
       try {
-        connectedDevice = await manager.connectToDevice(deviceId);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
-        setDevice(connectedDevice);
+        const devices = await RNBluetoothClassic.getBondedDevices();
+        const foundDevice = devices.find(d => d.id === deviceId);
+        if (!foundDevice) throw new Error('Dispositivo não encontrado');
+        setDevice(foundDevice);
+
+        const connected = await foundDevice.connect();
+        if (!connected) throw new Error('Falha ao conectar');
+
         setConnecting(false);
       } catch (error) {
         console.log('Erro ao conectar:', error);
         setConnecting(false);
       }
-    };
+    }
 
     connectDevice();
 
     return () => {
-      // Desconectar se estiver conectado quando o componente desmontar
-      if (connectedDevice) {
-        connectedDevice.cancelConnection().catch(e => {
-          console.log('Erro ao cancelar conexão:', e);
-        });
+      async function cleanup() {
+        if (device) {
+          const connected = await device.isConnected();
+          if (connected) {
+            await device.disconnect();
+          }
+        }
       }
+      cleanup();
     };
   }, [deviceId]);
 
@@ -65,8 +70,7 @@ export default function BluetoothConectadoScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Text>Conectado ao dispositivo:</Text>
-      <Text style={{ fontWeight: 'bold', marginVertical: 10 }}>{device.name ?? device.id}</Text>
-
+      <Text style={{ fontWeight: 'bold', marginVertical: 10 }}>{device.name || device.id}</Text>
       <Button title="Ir para Chat" onPress={() => navigation.navigate('Chat')} />
     </View>
   );
