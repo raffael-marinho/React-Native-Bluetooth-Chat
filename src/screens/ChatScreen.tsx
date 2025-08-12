@@ -1,140 +1,72 @@
-// src/screens/ChatScreen.tsx
-import React, { useEffect, useState, useRef } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  FlatList,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, Button, ActivityIndicator } from 'react-native';
+import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
+import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { RootStackParamList } from '../navigation/StackNavigator';
+import { BleManager, Device } from 'react-native-ble-plx';
 
-export default function ChatScreen() {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [input, setInput] = useState('');
-  const flatListRef = useRef<FlatList>(null);
+type BluetoothConectadoScreenRouteProp = RouteProp<RootStackParamList, 'BluetoothConectado'>;
+type BluetoothConectadoScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BluetoothConectado'>;
 
-  const handleSend = () => {
-    if (!input.trim()) return;
-    const newMsg = {
-      id: Date.now(), // temporário
-      sender: 'me',
-      content: input,
-      timestamp: new Date().toISOString(),
+const manager = new BleManager();
+
+export default function BluetoothConectadoScreen() {
+  const route = useRoute<BluetoothConectadoScreenRouteProp>();
+  const navigation = useNavigation<BluetoothConectadoScreenNavigationProp>();
+
+  // Aqui fazemos o cast para garantir que params não é undefined
+  const { deviceId } = route.params as NonNullable<typeof route.params>;
+
+  const [device, setDevice] = useState<Device | null>(null);
+  const [connecting, setConnecting] = useState(true);
+
+  useEffect(() => {
+    const connectDevice = async () => {
+      try {
+        const connectedDevice = await manager.connectToDevice(deviceId);
+        await connectedDevice.discoverAllServicesAndCharacteristics();
+        setDevice(connectedDevice);
+        setConnecting(false);
+      } catch (error) {
+        console.log('Erro ao conectar:', error);
+        setConnecting(false);
+      }
     };
-    setMessages(prev => [...prev, newMsg]);
-    setInput('');
-    setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
-  };
 
-  const renderItem = ({ item }: { item: any }) => (
-    <View style={item.sender === 'me' ? styles.myMessage : styles.otherMessage}>
-      <Text style={styles.messageText}>{item.content}</Text>
-    </View>
-  );
+    connectDevice();
+
+    // Cleanup desconecta ao sair da tela
+    return () => {
+      if (device) {
+        device.cancelConnection();
+      }
+    };
+  }, [deviceId]);
+
+  if (connecting) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" />
+        <Text>Conectando ao dispositivo...</Text>
+      </View>
+    );
+  }
+
+  if (!device) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+        <Text>Falha ao conectar ao dispositivo.</Text>
+        <Button title="Voltar" onPress={() => navigation.goBack()} />
+      </View>
+    );
+  }
 
   return (
-    <KeyboardAvoidingView
-      style={{ flex: 1 }}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={90}
-    >
-      <View style={styles.container}>
-        <Text style={styles.dateLabel}>Hoje</Text>
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          keyExtractor={item => item.id.toString()}
-          renderItem={renderItem}
-          contentContainerStyle={styles.messageList}
-        />
+    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <Text>Conectado ao dispositivo:</Text>
+      <Text style={{ fontWeight: 'bold', marginVertical: 10 }}>{device.name ?? device.id}</Text>
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            value={input}
-            onChangeText={setInput}
-            style={styles.input}
-            placeholder="Mensagem"
-            placeholderTextColor="#555"
-          />
-          <TouchableOpacity onPress={handleSend} style={styles.sendButton}>
-            <Text style={styles.sendButtonText}>▶</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </KeyboardAvoidingView>
+      <Button title="Ir para Chat" onPress={() => navigation.navigate('Chat')} />
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  dateLabel: {
-    alignSelf: 'center',
-    backgroundColor: '#ddd',
-    paddingVertical: 4,
-    paddingHorizontal: 12,
-    borderRadius: 6,
-    marginTop: 10,
-    color: '#333',
-    fontWeight: '600',
-  },
-  messageList: {
-    padding: 10,
-    paddingBottom: 20,
-  },
-  myMessage: {
-    alignSelf: 'flex-start',
-    backgroundColor: '#ADD8E6',
-    padding: 10,
-    borderRadius: 14,
-    marginVertical: 4,
-    maxWidth: '75%',
-  },
-  otherMessage: {
-    alignSelf: 'flex-end',
-    backgroundColor: '#ddd',
-    padding: 10,
-    borderRadius: 14,
-    marginVertical: 4,
-    maxWidth: '75%',
-  },
-  messageText: {
-    fontSize: 16,
-    color: '#000',
-  },
-  inputContainer: {
-    flexDirection: 'row',
-    padding: 10,
-    borderTopWidth: 1,
-    borderColor: '#ccc',
-    backgroundColor: '#eee',
-    alignItems: 'center',
-  },
-  input: {
-    flex: 1,
-    borderRadius: 20,
-    backgroundColor: '#ccc',
-    paddingHorizontal: 16,
-    height: 40,
-    fontSize: 16,
-    color: '#000',
-  },
-  sendButton: {
-    marginLeft: 10,
-    backgroundColor: '#1E88E5',
-    borderRadius: 20,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  sendButtonText: {
-    color: '#fff',
-    fontSize: 18,
-  },
-});
