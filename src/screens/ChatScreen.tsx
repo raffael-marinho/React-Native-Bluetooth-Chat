@@ -1,72 +1,106 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, Button, ActivityIndicator } from 'react-native';
-import { useRoute, RouteProp, useNavigation } from '@react-navigation/native';
-import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../navigation/StackNavigator';
-import { BleManager, Device } from 'react-native-ble-plx';
+import React, { useState, useEffect } from 'react';
+import { View, Text, Button, PermissionsAndroid, Alert, Platform, FlatList } from 'react-native';
+import RNBluetoothClassic, { BluetoothDevice } from 'react-native-bluetooth-classic';
 
-type BluetoothConectadoScreenRouteProp = RouteProp<RootStackParamList, 'BluetoothConectado'>;
-type BluetoothConectadoScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, 'BluetoothConectado'>;
+export default function ChatScreen() {
+  const [devices, setDevices] = useState<BluetoothDevice[]>([]);
+  const [loading, setLoading] = useState(false);
 
-const manager = new BleManager();
+  // Pede permissões no Android
+  async function requestPermissions() {
+    if (Platform.OS === 'android') {
+      try {
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        ]);
 
-export default function BluetoothConectadoScreen() {
-  const route = useRoute<BluetoothConectadoScreenRouteProp>();
-  const navigation = useNavigation<BluetoothConectadoScreenNavigationProp>();
+        const allGranted = Object.values(granted).every(
+          (status) => status === PermissionsAndroid.RESULTS.GRANTED
+        );
 
-  // Aqui fazemos o cast para garantir que params não é undefined
-  const { deviceId } = route.params as NonNullable<typeof route.params>;
+        if (!allGranted) {
+          Alert.alert('Permissão necessária', 'Ative todas as permissões para usar o Bluetooth.');
+          return false;
+        }
+        return true;
+      } catch (err) {
+        console.error(err);
+        return false;
+      }
+    }
+    return true; // iOS já pergunta automaticamente
+  }
 
-  const [device, setDevice] = useState<Device | null>(null);
-  const [connecting, setConnecting] = useState(true);
+  // Lista dispositivos pareados
+  async function loadPairedDevices() {
+    setLoading(true);
+    try {
+      const paired = await RNBluetoothClassic.getBondedDevices();
+      setDevices(paired);
+    } catch (err) {
+      console.error('Erro ao listar dispositivos:', err);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Conecta no dispositivo
+  async function connect(device: BluetoothDevice) {
+    try {
+      const isConnected = await RNBluetoothClassic.isDeviceConnected(device.address);
+      if (isConnected) {
+        Alert.alert('Info', `Já conectado a ${device.name}`);
+        return;
+      }
+
+      const connected = await device.connect();
+      if (connected) {
+        Alert.alert('Sucesso', `Conectado a ${device.name}`);
+      } else {
+        Alert.alert('Erro', 'Não foi possível conectar ao dispositivo.');
+      }
+    } catch (err) {
+      console.error('Erro na conexão:', err);
+      Alert.alert('Erro', 'Não foi possível conectar. Verifique se está pareado.');
+    }
+  }
 
   useEffect(() => {
-    const connectDevice = async () => {
-      try {
-        const connectedDevice = await manager.connectToDevice(deviceId);
-        await connectedDevice.discoverAllServicesAndCharacteristics();
-        setDevice(connectedDevice);
-        setConnecting(false);
-      } catch (error) {
-        console.log('Erro ao conectar:', error);
-        setConnecting(false);
+    (async () => {
+      const hasPermission = await requestPermissions();
+      if (hasPermission) {
+        loadPairedDevices();
       }
-    };
-
-    connectDevice();
-
-    // Cleanup desconecta ao sair da tela
-    return () => {
-      if (device) {
-        device.cancelConnection();
-      }
-    };
-  }, [deviceId]);
-
-  if (connecting) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <ActivityIndicator size="large" />
-        <Text>Conectando ao dispositivo...</Text>
-      </View>
-    );
-  }
-
-  if (!device) {
-    return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-        <Text>Falha ao conectar ao dispositivo.</Text>
-        <Button title="Voltar" onPress={() => navigation.goBack()} />
-      </View>
-    );
-  }
+    })();
+  }, []);
 
   return (
-    <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Conectado ao dispositivo:</Text>
-      <Text style={{ fontWeight: 'bold', marginVertical: 10 }}>{device.name ?? device.id}</Text>
+    <View style={{ flex: 1, padding: 20 }}>
+      <Text style={{ fontSize: 20, fontWeight: 'bold', marginBottom: 10 }}>
+        Dispositivos Pareados
+      </Text>
 
-      <Button title="Ir para Chat" onPress={() => navigation.navigate('Chat')} />
+      {loading && <Text>Carregando...</Text>}
+
+      <FlatList
+        data={devices}
+        keyExtractor={(item) => item.address}
+        renderItem={({ item }) => (
+          <View
+            style={{
+              padding: 10,
+              borderBottomWidth: 1,
+              borderBottomColor: '#ccc',
+            }}
+          >
+            <Text>{item.name || 'Sem nome'}</Text>
+            <Text>{item.address}</Text>
+            <Button title="Conectar" onPress={() => connect(item)} />
+          </View>
+        )}
+      />
     </View>
   );
 }

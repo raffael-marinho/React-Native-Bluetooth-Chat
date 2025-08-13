@@ -70,8 +70,13 @@ export default function BluetoothConectadoScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <Text>Conectado ao dispositivo:</Text>
-      <Text style={{ fontWeight: 'bold', marginVertical: 10 }}>{device.name || device.id}</Text>
-      <Button title="Ir para Chat" onPress={() => navigation.navigate('Chat')} />
+      <Text style={{ fontWeight: 'bold', marginVertical: 10 }}>
+        {device.name || device.id}
+      </Text>
+      <Button
+        title="Ir para Chat"
+        onPress={() => navigation.navigate('Chat', { device })}
+      />
     </View>
   );
 }

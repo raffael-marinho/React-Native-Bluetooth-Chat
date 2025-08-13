@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { PermissionsAndroid, Platform } from 'react-native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import RNBluetoothClassic from 'react-native-bluetooth-classic';
+import RNBluetoothClassic, { BluetoothDevice } from 'react-native-bluetooth-classic';
 
 import BluetoothDesativadoScreen from '../screens/BluetoothDesativadoScreen';
 import BluetoothConnectionScreen from '../screens/BluetoothConnectionScreen';
@@ -14,7 +14,7 @@ export type RootStackParamList = {
   BluetoothDesativado: undefined;
   BluetoothConnection: undefined;
   BluetoothConectado: { deviceId: string };
-  Chat: undefined;
+  Chat: { device: BluetoothDevice };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
