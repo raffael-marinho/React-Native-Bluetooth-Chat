@@ -14,8 +14,10 @@
     "expo": "~53.0.20",
     "expo-bluetooth": "^0.0.0",
     "expo-location": "^18.1.6",
+    "expo-notifications": "~0.31.4",
     "expo-sqlite": "~15.2.14",
     "expo-status-bar": "~2.2.3",
+    "lucide-react-native": "^0.540.0",
     "react": "19.0.0",
     "react-native": "0.79.5",
     "react-native-base64": "^0.2.1",
@@ -24,6 +26,7 @@
     "react-native-gesture-handler": "^2.27.1",
     "react-native-safe-area-context": "^5.5.2",
     "react-native-screens": "^4.13.1",
+    "react-native-sqlite-storage": "^6.0.1",
     "react-native-vector-icons": "^10.3.0"
   },
   "devDependencies": {

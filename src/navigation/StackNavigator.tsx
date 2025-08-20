@@ -1,20 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { PermissionsAndroid, Platform } from 'react-native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import RNBluetoothClassic, { BluetoothDevice } from 'react-native-bluetooth-classic';
+import React, { useEffect, useState } from "react";
+import { PermissionsAndroid, Platform } from "react-native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 
-import BluetoothDesativadoScreen from '../screens/BluetoothDesativadoScreen';
-import BluetoothConnectionScreen from '../screens/BluetoothConnectionScreen';
-import BluetoothConectadoScreen from '../screens/BluetoothConectadoScreen';
-import ChatScreen from '../screens/ChatScreen';
-import SplashScreen from '../screens/SplashScreen';
+import RNBluetoothClassic from "react-native-bluetooth-classic";
+
+import BluetoothDisabledScreen from "../screens/BluetoothDisabledScreen";
+import BluetoothConnectionScreen from "../screens/BluetoothConnectionScreen";
+import BluetoothConnectedScreen from "../screens/BluetoothConnectedScreen";
+import ChatScreen from "../screens/ChatScreen";
+import SplashScreen from "../screens/SplashScreen";
+
+import type { BTDevice } from "../services/bluetooth";
 
 export type RootStackParamList = {
   Splash: undefined;
-  BluetoothDesativado: undefined;
+  BluetoothDisabled: undefined;
   BluetoothConnection: undefined;
-  BluetoothConectado: { deviceId: string };
-  Chat: { device: BluetoothDevice };
+  BluetoothConnected: { device: BTDevice };
+  Chat: { device: BTDevice };
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -34,27 +37,23 @@ export default function StackNavigator() {
       try {
         const enabled = await RNBluetoothClassic.isBluetoothEnabled();
         setBluetoothStatus(enabled ? 'ready' : 'off');
-      } catch (error) {
-        console.error('Erro ao checar Bluetooth:', error);
+      } catch {
         setBluetoothStatus('off');
       }
     }
-
     checkBluetooth();
   }, []);
 
-  if (bluetoothStatus === 'checking') {
-    return <SplashScreen />;
-  }
+  if (bluetoothStatus === 'checking') return <SplashScreen />;
 
   return (
     <Stack.Navigator
-      initialRouteName={bluetoothStatus === 'off' ? 'BluetoothDesativado' : 'BluetoothConnection'}
+      initialRouteName={bluetoothStatus === 'off' ? 'BluetoothDisabled' : 'BluetoothConnection'}
       screenOptions={{ headerShown: false }}
     >
-      <Stack.Screen name="BluetoothDesativado" component={BluetoothDesativadoScreen} />
+      <Stack.Screen name="BluetoothDisabled" component={BluetoothDisabledScreen} />
       <Stack.Screen name="BluetoothConnection" component={BluetoothConnectionScreen} />
-      <Stack.Screen name="BluetoothConectado" component={BluetoothConectadoScreen} />
+      <Stack.Screen name="BluetoothConnected" component={BluetoothConnectedScreen} />
       <Stack.Screen name="Chat" component={ChatScreen} />
     </Stack.Navigator>
   );
