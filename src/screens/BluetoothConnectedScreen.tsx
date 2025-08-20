@@ -1,56 +1,61 @@
-import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet, Alert } from "react-native";
-import { useNavigation, useRoute, RouteProp } from "@react-navigation/native";
-import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
-
+// src/screens/BluetoothConnectedScreen.tsx
+import React, { useEffect, useState } from "react";
+import { View, Text, Button, StyleSheet, FlatList, Alert } from "react-native";
+import { NativeStackScreenProps } from "@react-navigation/native-stack";
 import { RootStackParamList } from "../navigation/StackNavigator";
-import { BTDevice, disconnect } from "../services/bluetooth";
-import { Bluetooth } from "lucide-react-native";
+import { disconnect, BTDevice, getCurrentDevice } from "../services/bluetooth";
+import { initDB, saveMessage, getMessages } from "../services/sqlite";
 
-type BluetoothConnectedScreenRouteProp = RouteProp<RootStackParamList, "BluetoothConnected">;
-type BluetoothConnectedScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "BluetoothConnected">;
+type Props = NativeStackScreenProps<RootStackParamList, "BluetoothConnected">;
 
-export default function BluetoothConnectedScreen() {
-  const navigation = useNavigation<BluetoothConnectedScreenNavigationProp>();
-  const route = useRoute<BluetoothConnectedScreenRouteProp>();
+export default function BluetoothConnectedScreen({ route, navigation }: Props) {
   const device: BTDevice = route.params.device;
+  const [messages, setMessages] = useState<{ id: number; sender: "me" | "other"; text: string; timestamp: number }[]>([]);
 
-  const handleGoChat = () => navigation.navigate("Chat", { device });
+  // Carrega histórico
+  useEffect(() => {
+    getMessages(device.id, setMessages);
+  }, [device.id]);
 
+  // Desconectar
   const handleDisconnect = async () => {
-    await disconnect();
-    Alert.alert("Desconectado", "O dispositivo foi desconectado.");
-    navigation.navigate("BluetoothConnection");
+    try {
+      await disconnect();
+      Alert.alert("Desconectado", `Dispositivo ${device.name ?? device.id} desconectado.`);
+      navigation.navigate("BluetoothConnection");
+    } catch (e: any) {
+      Alert.alert("Erro", e.message ?? String(e));
+    }
   };
+
+  // Simplesmente renderizando mensagens do histórico
+  const renderItem = ({ item }: { item: typeof messages[0] }) => (
+    <View style={[styles.message, item.sender === "me" ? styles.myMessage : styles.otherMessage]}>
+      <Text style={styles.messageText}>{item.text}</Text>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
-      <View style={styles.iconWrapper}>
-        <Bluetooth size={64} color="#007bff" />
-      </View>
-      <Text style={styles.title}>Conectado a:</Text>
-      <Text style={styles.deviceName}>{device.name ?? "Sem nome"}</Text>
-      <Text style={styles.deviceId}>{device.id}</Text>
+      <Text style={styles.header}>Conectado a: {device.name ?? device.id}</Text>
 
-      <TouchableOpacity style={styles.chatButton} onPress={handleGoChat}>
-        <Text style={styles.chatButtonText}>Ir para Chat</Text>
-      </TouchableOpacity>
+      <FlatList
+        data={messages}
+        keyExtractor={(item) => item.id.toString()}
+        renderItem={renderItem}
+        contentContainerStyle={{ paddingVertical: 8 }}
+      />
 
-      <TouchableOpacity style={styles.disconnectButton} onPress={handleDisconnect}>
-        <Text style={styles.disconnectButtonText}>Desconectar</Text>
-      </TouchableOpacity>
+      <Button title="Desconectar" onPress={handleDisconnect} color="#ff4d4d" />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: "#f9f9f9", padding: 20 },
-  iconWrapper: { marginBottom: 20, backgroundColor: "#e6f0ff", padding: 20, borderRadius: 50 },
-  title: { fontSize: 18, fontWeight: "600", marginBottom: 8, color: "#333" },
-  deviceName: { fontSize: 20, fontWeight: "bold", color: "#007bff" },
-  deviceId: { fontSize: 14, color: "#666", marginBottom: 30 },
-  chatButton: { backgroundColor: "#007bff", paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12, marginBottom: 15 },
-  chatButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
-  disconnectButton: { backgroundColor: "#ff4d4d", paddingVertical: 14, paddingHorizontal: 40, borderRadius: 12 },
-  disconnectButtonText: { color: "#fff", fontSize: 16, fontWeight: "bold" },
+  container: { flex: 1, padding: 16, backgroundColor: "#f9f9f9" },
+  header: { fontSize: 18, fontWeight: "bold", marginBottom: 12, textAlign: "center" },
+  message: { padding: 10, borderRadius: 8, marginVertical: 4, maxWidth: "80%" },
+  myMessage: { backgroundColor: "#007bff", alignSelf: "flex-end" },
+  otherMessage: { backgroundColor: "#e0e0e0", alignSelf: "flex-start" },
+  messageText: { color: "#fff" },
 });
