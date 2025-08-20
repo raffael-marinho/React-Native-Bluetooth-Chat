@@ -1,0 +1,11 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Fundo branco ou cor que preferir -->
+    <item android:drawable="@color/splashscreen_background"/>
+
+    <!-- Logo centralizado -->
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splashscreen_logo"/>
+    </item>
+</layer-list>

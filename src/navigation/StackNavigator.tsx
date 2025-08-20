@@ -44,7 +44,9 @@ export default function StackNavigator() {
     checkBluetooth();
   }, []);
 
-  if (bluetoothStatus === 'checking') return <SplashScreen />;
+  if (bluetoothStatus === 'checking') {
+  return <SplashScreen />; // Splash só exibe enquanto checa Bluetooth
+  } 
 
   return (
     <Stack.Navigator

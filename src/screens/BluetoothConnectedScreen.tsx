@@ -10,18 +10,32 @@ type Props = NativeStackScreenProps<RootStackParamList, "BluetoothConnected">;
 
 export default function BluetoothConnectedScreen({ route, navigation }: Props) {
   const device: BTDevice = route.params.device;
-  const [messages, setMessages] = useState<{ id: number; sender: "me" | "other"; text: string; timestamp: number }[]>([]);
+  const [messages, setMessages] = useState<
+    { id: number; sender: "me" | "other"; text: string; timestamp: number }[]
+  >([]);
 
   // Carrega histórico
   useEffect(() => {
-    getMessages(device.id, setMessages);
+    const loadMessages = async () => {
+      try {
+        const msgs = await getMessages(device.id);
+        setMessages(msgs);
+      } catch (err) {
+        console.error("Erro ao carregar mensagens:", err);
+      }
+    };
+
+    loadMessages();
   }, [device.id]);
 
   // Desconectar
   const handleDisconnect = async () => {
     try {
       await disconnect();
-      Alert.alert("Desconectado", `Dispositivo ${device.name ?? device.id} desconectado.`);
+      Alert.alert(
+        "Desconectado",
+        `Dispositivo ${device.name ?? device.id} desconectado.`
+      );
       navigation.navigate("BluetoothConnection");
     } catch (e: any) {
       Alert.alert("Erro", e.message ?? String(e));
@@ -29,8 +43,13 @@ export default function BluetoothConnectedScreen({ route, navigation }: Props) {
   };
 
   // Simplesmente renderizando mensagens do histórico
-  const renderItem = ({ item }: { item: typeof messages[0] }) => (
-    <View style={[styles.message, item.sender === "me" ? styles.myMessage : styles.otherMessage]}>
+  const renderItem = ({ item }: { item: (typeof messages)[0] }) => (
+    <View
+      style={[
+        styles.message,
+        item.sender === "me" ? styles.myMessage : styles.otherMessage,
+      ]}
+    >
       <Text style={styles.messageText}>{item.text}</Text>
     </View>
   );
@@ -53,7 +72,12 @@ export default function BluetoothConnectedScreen({ route, navigation }: Props) {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16, backgroundColor: "#f9f9f9" },
-  header: { fontSize: 18, fontWeight: "bold", marginBottom: 12, textAlign: "center" },
+  header: {
+    fontSize: 18,
+    fontWeight: "bold",
+    marginBottom: 12,
+    textAlign: "center",
+  },
   message: { padding: 10, borderRadius: 8, marginVertical: 4, maxWidth: "80%" },
   myMessage: { backgroundColor: "#007bff", alignSelf: "flex-end" },
   otherMessage: { backgroundColor: "#e0e0e0", alignSelf: "flex-start" },
