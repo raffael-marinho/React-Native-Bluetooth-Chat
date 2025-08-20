@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "React-Native-Bluetooth-Chat",
-    "slug": "React-Native-Bluetooth-Chat",
+    "name": "Blink",
+    "slug": "Blink",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",

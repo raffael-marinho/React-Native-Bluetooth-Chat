@@ -1,18 +1,30 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from "react-native";
+import { 
+  View, 
+  Text, 
+  FlatList, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator, 
+  Alert 
+} from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
 import { ensureEnabled, listPaired, discover, connect, BTDevice } from "../services/bluetooth";
 import { RootStackParamList } from "../navigation/StackNavigator";
 
-type BluetoothConnectionScreenNavigationProp = NativeStackNavigationProp<RootStackParamList, "BluetoothConnection">;
+type BluetoothConnectionScreenNavigationProp = NativeStackNavigationProp<
+  RootStackParamList,
+  "BluetoothConnection"
+>;
 
 export default function BluetoothConnectionScreen() {
   const navigation = useNavigation<BluetoothConnectionScreenNavigationProp>();
   const [devices, setDevices] = useState<BTDevice[]>([]);
   const [loading, setLoading] = useState(false);
 
+  /** Verifica se o Bluetooth está ativo ao abrir a tela */
   useEffect(() => {
     (async () => {
       const enabled = await ensureEnabled();
@@ -29,6 +41,7 @@ export default function BluetoothConnectionScreen() {
     })();
   }, []);
 
+  /** Descobre dispositivos próximos */
   const handleScan = async () => {
     setLoading(true);
     const found = await discover(8000);
@@ -39,11 +52,22 @@ export default function BluetoothConnectionScreen() {
     setLoading(false);
   };
 
+  /** Conecta ao dispositivo selecionado */
   const handleConnect = async (device: BTDevice) => {
     try {
       setLoading(true);
+
+      // Se já estiver conectado, desconecta antes
+      if (await device.isConnected()) {
+        await device.disconnect();
+      }
+
+      // Delay de 0,5s antes de conectar
+      await new Promise((res) => setTimeout(res, 500));
+
       const connected = await connect(device.id);
       setLoading(false);
+
       Alert.alert("Conectado", `Conectado a ${connected.name ?? connected.id}`);
       navigation.navigate("BluetoothConnected", { device: connected });
     } catch (e: any) {
@@ -69,7 +93,9 @@ export default function BluetoothConnectionScreen() {
             <Text style={styles.deviceId}>{item.id}</Text>
           </TouchableOpacity>
         )}
-        ListEmptyComponent={!loading ? <Text style={styles.emptyText}>Nenhum dispositivo encontrado</Text> : null}
+        ListEmptyComponent={
+          !loading ? <Text style={styles.emptyText}>Nenhum dispositivo encontrado</Text> : null
+        }
       />
     </View>
   );
