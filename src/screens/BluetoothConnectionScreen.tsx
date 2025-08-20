@@ -1,17 +1,23 @@
 import React, { useEffect, useState } from "react";
-import { 
-  View, 
-  Text, 
-  FlatList, 
-  TouchableOpacity, 
-  StyleSheet, 
-  ActivityIndicator, 
-  Alert 
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from "react-native";
 import { useNavigation } from "@react-navigation/native";
 import type { NativeStackNavigationProp } from "@react-navigation/native-stack";
 
-import { ensureEnabled, listPaired, discover, connect, BTDevice } from "../services/bluetooth";
+import {
+  ensureEnabled,
+  listPaired,
+  discover,
+  connect,
+  BTDevice,
+} from "../services/bluetooth";
 import { RootStackParamList } from "../navigation/StackNavigator";
 
 type BluetoothConnectionScreenNavigationProp = NativeStackNavigationProp<
@@ -36,18 +42,19 @@ export default function BluetoothConnectionScreen() {
         );
         return;
       }
+
       const bonded = await listPaired();
       setDevices(bonded);
     })();
   }, []);
 
-  /** Descobre dispositivos próximos */
+  /** Faz descoberta de dispositivos */
   const handleScan = async () => {
     setLoading(true);
     const found = await discover(8000);
-    setDevices(prev => {
-      const ids = new Set(prev.map(d => d.id));
-      return [...prev, ...found.filter(d => !ids.has(d.id))];
+    setDevices((prev) => {
+      const ids = new Set(prev.map((d) => d.id));
+      return [...prev, ...found.filter((d) => !ids.has(d.id))];
     });
     setLoading(false);
   };
@@ -57,18 +64,22 @@ export default function BluetoothConnectionScreen() {
     try {
       setLoading(true);
 
-      // Se já estiver conectado, desconecta antes
-      if (await device.isConnected()) {
-        await device.disconnect();
+      // Se o dispositivo já estiver conectado, desconecta antes
+      if (device.isConnected) {
+        const alreadyConnected = await device.isConnected();
+        if (alreadyConnected && device.disconnect) {
+          await device.disconnect();
+        }
       }
 
-      // Delay de 0,5s antes de conectar
+      // Delay curto antes de conectar
       await new Promise((res) => setTimeout(res, 500));
 
       const connected = await connect(device.id);
-      setLoading(false);
 
+      setLoading(false);
       Alert.alert("Conectado", `Conectado a ${connected.name ?? connected.id}`);
+
       navigation.navigate("BluetoothConnected", { device: connected });
     } catch (e: any) {
       setLoading(false);
@@ -86,7 +97,7 @@ export default function BluetoothConnectionScreen() {
 
       <FlatList
         data={devices}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.deviceItem} onPress={() => handleConnect(item)}>
             <Text style={styles.deviceName}>{item.name ?? "Sem nome"}</Text>
